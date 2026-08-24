@@ -72,6 +72,7 @@ menu_instructions() {
     instructions_path='instructions'
     completed_path='instructions/completed'
     log_filename='instructions.log'
+    backlog_filename='backlog.md'
 
     instructions_path=$(whiptail --title "지시서 경로를 설정합니다." --backtitle "$backtitle" \
     --inputbox "지시서를 보관할 경로를 입력하세요." 10 60 $instructions_path \
@@ -85,11 +86,16 @@ menu_instructions() {
     --inputbox "지시서 로그를 저장할 파일이름을 입력하세요." 10 60 $log_filename \
     3>&1 1>&2 2>&3)
 
+    log_filename=$(whiptail --title "백로그 경로를 설정합니다."  --backtitle "$backtitle" \
+    --inputbox "백로그를 저장할 파일이름을 입력하세요." 10 60 $log_filename \
+    3>&1 1>&2 2>&3)
+
     message=$(printf '%s\n\n%s\n%s\n%s' \
         "입력한 경로로 지시서를 저장하시겠습니까?" \
         "지시서 경로: $instructions_path" \
         "완료된 지시서 경로: $completed_path" \
-        "로그 파일이름: $log_filename")
+        "로그 파일이름: $log_filename" \
+        "백로그 파일이름: $backlog_filename")
 
     whiptail --title "지시서 경로를 설정합니다." --backtitle "$backtitle" \
     --yesno "$message" 11 80 \
@@ -105,9 +111,10 @@ menu_instructions() {
 
 }
 
-# instructions_path, completed_path, log_filename
+# instructions_path, completed_path, log_filename, backlog_filename
 set_instructions() {
     log_filepath="${instructions_path}/${log_filename}"
+    backlog_filepath="${instructions_path}/${backlog_filename}"
 
     mkdir -p "$instructions_path" "$completed_path"
 
@@ -116,6 +123,13 @@ set_instructions() {
     echo "# Instructions Log" >> "$log_filepath"
     echo "# format: uuid | title | timestamp | status" >> "$log_filepath"
     echo "$(uuidgen) | 초기설정예제 | $(date -u +"%Y-%m-%dT%H:%M:%S%z") | created" >> "$log_filepath"
+
+    # 백로그 파일 설정
+    touch "$backlog_filepath"
+    echo "# BackLog"
+    echo "미결된 주제에 대하여 아래에 작성하고 AGENT에서 참조한다." >> "$backlog_filepath"
+    echo "- 완료된 주제는 삭제한다" >> "$backlog_filepath"
+    echo "- 이 파일은 항상 유지하며, 공유되지 않는다." >> "$backlog_filepath"
 
     # 지침 파일 설정
     touch "$AGENTS.md"
@@ -126,6 +140,9 @@ set_instructions() {
     echo "2. 지침 파일 생성: ${instructions_path}/{slug}.md 생성. frontmatter에 uuid, title, status, created 기록" >> "$AGENTS.md"
     echo "3. 로그 파일 생성 및 업데이트: ${log_filepath}에 {uuid} | {title} | {timestamp} | {status} 기록" >> "$AGENTS.md"
     echo "4. 모든 단계 완료시 ${log_filepath}에 {uuid} | {title} | {timestamp} | completed 기록, 사용된 지시서는 ${completed_path}로 이동" >> "$AGENTS.md"
+    echo "### 백로그" >> "$AGENTS.md"
+    echo "1. 지시서가 작성되지 않은 미결된 주제에 대해서는 백로그 파일에 작성된다." >> "$AGENTS.md"
+    echo "2. AGENT는 사용자 동의를 얻어 미결된 주제에 대하여 새로운 지침을 작성하고, 업무를 진행할 수 있다." >> "$AGENTS.md"
 
     backtitle="지시서 경로 설정: ${instructions_path}"
 }
